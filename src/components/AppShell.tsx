@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { useAuth } from "./AuthProvider";
 import { ReminderScheduler } from "./ReminderScheduler";
-import { isSupabaseConfigured } from "@/lib/supabase";
+import { isSecretKey, isSupabaseConfigured } from "@/lib/supabase";
 import type { Profile } from "@/lib/types";
 
 const NAV = [
@@ -23,7 +23,7 @@ function normalize(path: string) {
 }
 
 export function AppShell({ children }: { children: React.ReactNode }) {
-  const { session, profile, loading } = useAuth();
+  const { session, profile, loading, error, retry, signOut } = useAuth();
   const pathname = normalize(usePathname());
   const router = useRouter();
   const isPublic = PUBLIC_PATHS.includes(pathname);
@@ -48,7 +48,43 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     );
   }
 
+  if (isSecretKey) {
+    return (
+      <Centered>
+        <div className="card max-w-md text-center">
+          <p className="mb-2 text-lg font-bold">⚠️ المفتاح المستخدم هو المفتاح السري</p>
+          <p className="text-sm text-muted">
+            لازم <code dir="ltr">NEXT_PUBLIC_SUPABASE_ANON_KEY</code> يكون الـ publishable key (بيبدأ بـ{" "}
+            <code dir="ltr">sb_publishable_</code>). المفتاح السري ممنوع يتحط في الموقع. لازم يتغير ويتعمل deploy تاني.
+          </p>
+        </div>
+      </Centered>
+    );
+  }
+
   if (isPublic) return <>{children}</>;
+
+  if (!loading && error) {
+    return (
+      <Centered>
+        <div className="card max-w-md space-y-4 text-center">
+          <p className="text-4xl">😕</p>
+          <p className="font-bold">حصلت مشكلة</p>
+          <p className="text-sm text-muted">{error}</p>
+          <div className="flex justify-center gap-2">
+            <button className="btn btn-primary" onClick={retry}>
+              جرب تاني
+            </button>
+            {session && (
+              <button className="btn" onClick={signOut}>
+                تسجيل خروج
+              </button>
+            )}
+          </div>
+        </div>
+      </Centered>
+    );
+  }
 
   if (loading || !session || !profile) {
     return (

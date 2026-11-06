@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { supabase } from "@/lib/supabase";
+import { friendlyError, supabase } from "@/lib/supabase";
 import { normalizeUsername, USERNAME_RULE, usernameToEmail } from "@/lib/username";
 
 function translateError(message: string): string {
@@ -10,7 +10,7 @@ function translateError(message: string): string {
   if (/Email not confirmed/i.test(message)) return "الحساب مستني تأكيد. لازم الأدمن يقفل Confirm email من إعدادات Supabase.";
   if (/Password should be/i.test(message)) return "الباسورد لازم يكون 6 حروف أو أرقام على الأقل";
   if (/invalid/i.test(message) && /email/i.test(message)) return "حصلت مشكلة في إنشاء الحساب، بلّغ الأدمن.";
-  return message;
+  return friendlyError(message);
 }
 
 export default function LoginPage() {
