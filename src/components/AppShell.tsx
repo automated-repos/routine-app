@@ -41,7 +41,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <p className="text-lg font-bold mb-2">لسه Supabase مش متوصل</p>
           <p className="text-sm text-muted">
             اعمل ملف <code dir="ltr">.env.local</code> فيه <code dir="ltr">NEXT_PUBLIC_SUPABASE_URL</code> و{" "}
-            <code dir="ltr">NEXT_PUBLIC_SUPABASE_ANON_KEY</code> (بص على <code dir="ltr">.env.example</code>).
+            <code dir="ltr">NEXT_PUBLIC_SUPABASE_ANON_KEY</code> (بص على <code dir="ltr">.env.example</code>). على Netlify أو Cloudflare: اتأكد إن القيم صح في Environment variables، وبعد أي تعديل لازم يتعمل deploy جديد.
           </p>
         </div>
       </Centered>

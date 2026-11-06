@@ -31,19 +31,24 @@ export default function LoginPage() {
     }
     if (mode === "signup" && !gender) return setError("اختار ذكر أو أنثى");
     setBusy(true);
-    if (mode === "login") {
-      const { error } = await supabase.auth.signInWithPassword({ email: usernameToEmail(u), password });
-      if (error) setError(translateError(error.message));
-    } else {
-      const { data, error } = await supabase.auth.signUp({
-        email: usernameToEmail(u),
-        password,
-        options: { data: { username: u, display_name: name.trim() || u, gender } },
-      });
-      if (error) setError(translateError(error.message));
-      else if (!data.session) setError(translateError("Email not confirmed"));
+    try {
+      if (mode === "login") {
+        const { error } = await supabase.auth.signInWithPassword({ email: usernameToEmail(u), password });
+        if (error) setError(translateError(error.message));
+      } else {
+        const { data, error } = await supabase.auth.signUp({
+          email: usernameToEmail(u),
+          password,
+          options: { data: { username: u, display_name: name.trim() || u, gender } },
+        });
+        if (error) setError(translateError(error.message));
+        else if (!data.session) setError(translateError("Email not confirmed"));
+      }
+    } catch (e) {
+      setError(translateError((e as Error).message ?? String(e)));
+    } finally {
+      setBusy(false);
     }
-    setBusy(false);
   }
 
   return (

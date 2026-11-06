@@ -17,7 +17,12 @@ export function ReminderScheduler() {
     async function schedule() {
       timers.forEach(clearTimeout);
       timers = [];
-      const data = await loadToday(profile!);
+      let data;
+      try {
+        data = await loadToday(profile!);
+      } catch {
+        return; // هنحاول تاني في التحديث الجاي
+      }
       const now = Date.now();
       for (const item of upcoming(data.items)) {
         const delay = item.time!.getTime() - now;

@@ -17,10 +17,18 @@ export default function TodayPage() {
   const [streak, setStreak] = useState(0);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [toast, setToast] = useState("");
+  const [loadError, setLoadError] = useState("");
 
   const load = useCallback(async () => {
     if (!profile) return;
-    const d = await loadToday(profile);
+    let d: TodayData;
+    try {
+      d = await loadToday(profile);
+      setLoadError("");
+    } catch (e) {
+      setLoadError((e as Error).message);
+      return;
+    }
     setData(d);
     const { data: days } = await supabase.rpc("my_activity", { p_from: addDays(d.today, -400) });
     setStreak(currentStreak(new Set(((days ?? []) as { log_date: string }[]).map((r) => r.log_date)), d.today));
@@ -43,6 +51,18 @@ export default function TodayPage() {
     else if (res && res.ok === false && res.message) flash(res.message);
     await Promise.all([load(), refreshProfile()]);
     setBusyId(null);
+  }
+
+  if (loadError && !data) {
+    return (
+      <div className="card space-y-3 text-center">
+        <p className="text-3xl">😕</p>
+        <p className="text-sm text-muted">{loadError}</p>
+        <button className="btn btn-primary" onClick={load}>
+          جرب تاني
+        </button>
+      </div>
+    );
   }
 
   if (!profile || !data) return <p className="text-center text-muted">جاري التحميل...</p>;
