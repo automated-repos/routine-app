@@ -31,6 +31,23 @@ function legacyRole(key: string): string | null {
 }
 export const isSecretKey = anonKey.startsWith("sb_secret_") || legacyRole(anonKey) === "service_role";
 
+// لو الطلب مردش خلال المدة دي نعتبره فشل بدل ما نفضل مستنيين
+export function withTimeout<T>(promise: PromiseLike<T>, ms = 15000): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const t = setTimeout(() => reject(new Error("السيرفر مش بيرد. اتأكد من النت وجرب تاني.")), ms);
+    Promise.resolve(promise).then(
+      (v) => {
+        clearTimeout(t);
+        resolve(v);
+      },
+      (e) => {
+        clearTimeout(t);
+        reject(e);
+      },
+    );
+  });
+}
+
 // يحوّل أخطاء Supabase التقنية لرسالة مفهومة
 export function friendlyError(message: string): string {
   if (/invalid api key|no api key|secret api key|apikey/i.test(message))

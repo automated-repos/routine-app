@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { friendlyError, supabase } from "@/lib/supabase";
+import { friendlyError, supabase, withTimeout } from "@/lib/supabase";
 import { normalizeUsername, USERNAME_RULE, usernameToEmail } from "@/lib/username";
 
 function translateError(message: string): string {
@@ -33,14 +33,14 @@ export default function LoginPage() {
     setBusy(true);
     try {
       if (mode === "login") {
-        const { error } = await supabase.auth.signInWithPassword({ email: usernameToEmail(u), password });
+        const { error } = await withTimeout(supabase.auth.signInWithPassword({ email: usernameToEmail(u), password }));
         if (error) setError(translateError(error.message));
       } else {
-        const { data, error } = await supabase.auth.signUp({
+        const { data, error } = await withTimeout(supabase.auth.signUp({
           email: usernameToEmail(u),
           password,
           options: { data: { username: u, display_name: name.trim() || u, gender } },
-        });
+        }));
         if (error) setError(translateError(error.message));
         else if (!data.session) setError(translateError("Email not confirmed"));
       }

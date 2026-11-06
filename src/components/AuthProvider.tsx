@@ -2,7 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
-import { friendlyError, supabase } from "@/lib/supabase";
+import { friendlyError, supabase, withTimeout } from "@/lib/supabase";
 import type { Gender, Profile } from "@/lib/types";
 
 interface AuthState {
@@ -37,7 +37,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return;
     }
     try {
-      const { data, error } = await supabase.from("profiles").select("*").eq("id", userId).maybeSingle();
+      const { data, error } = await withTimeout(supabase.from("profiles").select("*").eq("id", userId).maybeSingle());
       if (error) throw error;
       if (!data) {
         setError("الحساب ده ملوش بيانات في قاعدة البيانات. سجّل خروج واعمل حساب جديد، أو بلّغ الأدمن.");

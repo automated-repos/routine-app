@@ -29,10 +29,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const isPublic = PUBLIC_PATHS.includes(pathname);
 
   useEffect(() => {
-    if (loading) return;
+    if (loading || error) return;
     if (!session && !isPublic) router.replace("/login/");
     if (session && isPublic) router.replace("/");
-  }, [loading, session, isPublic, router]);
+  }, [loading, error, session, isPublic, router]);
 
   if (!isSupabaseConfigured) {
     return (
