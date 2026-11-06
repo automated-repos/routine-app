@@ -5,7 +5,8 @@ import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "@/components/AuthProvider";
 import { HabitCard } from "@/components/HabitCard";
 import { Notices } from "@/components/Notices";
-import { supabase } from "@/lib/supabase";
+import { friendlyError, supabase } from "@/lib/supabase";
+import { withTimeout } from "@/lib/request";
 import { addDays, currentStreak, formatTime } from "@/lib/dates";
 import { PRAYER_ORDER, prayerSlotFor } from "@/lib/prayer";
 import { loadToday, type HabitStatus, type TodayData } from "@/lib/today";
@@ -14,16 +15,24 @@ import { PRAYER_LABEL } from "@/lib/types";
 export default function TodayPage() {
   const { profile, refreshProfile, g } = useAuth();
   const [data, setData] = useState<TodayData | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [streak, setStreak] = useState(0);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [toast, setToast] = useState("");
 
   const load = useCallback(async () => {
     if (!profile) return;
-    const d = await loadToday(profile);
-    setData(d);
-    const { data: days } = await supabase.rpc("my_activity", { p_from: addDays(d.today, -400) });
-    setStreak(currentStreak(new Set(((days ?? []) as { log_date: string }[]).map((r) => r.log_date)), d.today));
+    setLoadError(null);
+    try {
+      const d = await loadToday(profile);
+      setData(d);
+      const { data: days } = await withTimeout(supabase.rpc("my_activity", { p_from: addDays(d.today, -400) }));
+      setStreak(currentStreak(new Set(((days ?? []) as { log_date: string }[]).map((r) => r.log_date)), d.today));
+    } catch (e) {
+      setLoadError(friendlyError(
+        e && typeof e === "object" && "message" in e ? String(e.message) : String(e),
+      ));
+    }
   }, [profile]);
 
   useEffect(() => {
@@ -44,6 +53,14 @@ export default function TodayPage() {
     await Promise.all([load(), refreshProfile()]);
     setBusyId(null);
   }
+
+  if (loadError && !data) return (
+    <div className="card space-y-3 text-center" role="alert">
+      <p className="font-bold">تعذر تحميل عاداتك</p>
+      <p className="text-sm text-muted">{loadError}</p>
+      <button className="btn btn-primary" onClick={() => void load()}>جرب تاني</button>
+    </div>
+  );
 
   if (!profile || !data) return <p className="text-center text-muted">جاري التحميل...</p>;
 

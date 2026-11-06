@@ -8,7 +8,16 @@ function clean(v: string | undefined) {
 const url = clean(process.env.NEXT_PUBLIC_SUPABASE_URL).replace(/\/+$/, "");
 const anonKey = clean(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
 
-export const isSupabaseConfigured = Boolean(url && anonKey);
+function isValidUrl(value: string): boolean {
+  try {
+    const parsed = new URL(value);
+    return parsed.protocol === "https:" || parsed.protocol === "http:";
+  } catch {
+    return false;
+  }
+}
+
+export const isSupabaseConfigured = Boolean(isValidUrl(url) && anonKey);
 
 // المفتاح السري ممنوع في المتصفح، Supabase بيرفضه
 function legacyRole(key: string): string | null {
@@ -32,6 +41,7 @@ export function friendlyError(message: string): string {
 }
 
 // المفتاح ده public عادي، الحماية كلها من RLS في قاعدة البيانات
-export const supabase = createClient(url || "http://localhost:54321", anonKey || "missing-key", {
+export const supabase = createClient(isSupabaseConfigured ? url : "http://localhost:54321",
+  isSupabaseConfigured && !isSecretKey ? anonKey : "missing-key", {
   auth: { persistSession: true, autoRefreshToken: true },
 });

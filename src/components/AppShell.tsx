@@ -29,10 +29,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const isPublic = PUBLIC_PATHS.includes(pathname);
 
   useEffect(() => {
-    if (loading) return;
+    if (loading || error || !isSupabaseConfigured || isSecretKey) return;
     if (!session && !isPublic) router.replace("/login/");
     if (session && isPublic) router.replace("/");
-  }, [loading, session, isPublic, router]);
+  }, [loading, session, error, isPublic, router]);
 
   if (!isSupabaseConfigured) {
     return (
@@ -40,8 +40,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <div className="card max-w-md text-center">
           <p className="text-lg font-bold mb-2">لسه Supabase مش متوصل</p>
           <p className="text-sm text-muted">
-            اعمل ملف <code dir="ltr">.env.local</code> فيه <code dir="ltr">NEXT_PUBLIC_SUPABASE_URL</code> و{" "}
-            <code dir="ltr">NEXT_PUBLIC_SUPABASE_ANON_KEY</code> (بص على <code dir="ltr">.env.example</code>).
+            اتأكد إن <code dir="ltr">NEXT_PUBLIC_SUPABASE_URL</code> رابط صحيح، وإن{" "}
+            <code dir="ltr">NEXT_PUBLIC_SUPABASE_ANON_KEY</code> موجود في إعدادات الموقع، وبعد تعديلهم اعمل deploy جديد.
           </p>
         </div>
       </Centered>
@@ -62,8 +62,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (isPublic) return <>{children}</>;
-
   if (!loading && error) {
     return (
       <Centered>
@@ -80,6 +78,23 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 تسجيل خروج
               </button>
             )}
+          </div>
+        </div>
+      </Centered>
+    );
+  }
+
+  if (isPublic) return <>{children}</>;
+
+  if (!loading && session && !profile) {
+    return (
+      <Centered>
+        <div className="card max-w-md space-y-4 text-center" role="alert">
+          <p className="font-bold">تعذر تحميل بيانات حسابك</p>
+          <p className="text-sm text-muted">جرب تاني أو سجّل خروج وادخل من جديد.</p>
+          <div className="flex justify-center gap-2">
+            <button className="btn btn-primary" onClick={retry}>جرب تاني</button>
+            <button className="btn" onClick={signOut}>تسجيل خروج</button>
           </div>
         </div>
       </Centered>

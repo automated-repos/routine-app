@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
+import { withTimeout } from "@/lib/request";
 import type { Session } from "@supabase/supabase-js";
 import { friendlyError, supabase } from "@/lib/supabase";
 import type { Gender, Profile } from "@/lib/types";
@@ -37,7 +38,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return;
     }
     try {
-      const { data, error } = await supabase.from("profiles").select("*").eq("id", userId).maybeSingle();
+      const { data, error } = await withTimeout(supabase.from("profiles").select("*").eq("id", userId).maybeSingle());
       if (error) throw error;
       if (!data) {
         setError("الحساب ده ملوش بيانات في قاعدة البيانات. سجّل خروج واعمل حساب جديد، أو بلّغ الأدمن.");
@@ -62,7 +63,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     (async () => {
       try {
-        const { data, error } = await supabase.auth.getSession();
+        const { data, error } = await withTimeout(supabase.auth.getSession());
         if (error) throw error;
         setSession(data.session);
         await loadProfile(data.session?.user.id);
@@ -96,10 +97,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = useCallback(async () => {
     try {
-      await supabase.auth.signOut();
+      const { error } = await withTimeout(supabase.auth.signOut());
+      if (error) throw error;
     } catch {
       // حتى لو السيرفر مردش، نمسح الجلسة من الجهاز
-      await supabase.auth.signOut({ scope: "local" }).catch(() => {});
+      await withTimeout(supabase.auth.signOut({ scope: "local" })).catch(() => {});
     }
     setSession(null);
     setProfile(null);

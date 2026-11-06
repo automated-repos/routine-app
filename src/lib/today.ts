@@ -1,3 +1,4 @@
+import { withTimeout } from "./request";
 import { supabase } from "./supabase";
 import { periodStart, todayIn } from "./dates";
 import { getPrayerTimes, habitTime, type DayPrayerTimes } from "./prayer";
@@ -21,10 +22,14 @@ export async function loadToday(profile: Profile): Promise<TodayData> {
   const today = todayIn(profile.timezone);
   const starts = [today, periodStart("weekly", today), periodStart("monthly", today)];
 
-  const [{ data: habits }, { data: logs }] = await Promise.all([
+  const [habitsResult, logsResult] = await withTimeout(Promise.all([
     supabase.from("habits").select("*").eq("archived", false).order("sort_order").order("created_at"),
     supabase.from("habit_logs").select("id, habit_id, log_date, period_start, created_at").in("period_start", starts),
-  ]);
+  ]));
+  if (habitsResult.error) throw habitsResult.error;
+  if (logsResult.error) throw logsResult.error;
+  const habits = habitsResult.data;
+  const logs = logsResult.data;
 
   const times = getPrayerTimes(profile);
   const usePrayer = profile.prayer_mode && times != null;
